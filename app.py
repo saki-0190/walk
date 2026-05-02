@@ -275,3 +275,37 @@ line = alt.Chart(chart_df).mark_line(
 )
 
 st.altair_chart(bars + line, use_container_width=True)
+
+# ========================= 
+#  累計グラフ用データ作成 
+# ========================= 
+chart_df = df.copy() 
+chart_df["date"] = pd.to_datetime(chart_df["date"]) 
+# 実績累計
+chart_df["actual_cum"] = chart_df["steps"].cumsum() 
+# 目標累計（例：target1） 
+chart_df["target_cum"] = target1 * (chart_df.index + 1)
+
+# ========================= 
+#  グラフ 
+# =========================
+
+actual_line = alt.Chart(chart_df).mark_line(
+    color="#FFA500",
+    strokeWidth=3
+).encode(
+    x=alt.X("date:T", title="日付"),
+    y=alt.Y("actual_cum:Q", title="累計歩数")
+)
+
+target_line = alt.Chart(chart_df).mark_line(
+    color="#ff8fab",
+    strokeDash=[5,5],
+    strokeWidth=2
+).encode(
+    x="date:T",
+    y="target_cum:Q"
+)
+
+# 合成
+st.altair_chart(actual_line + target_line, use_container_width=True)
