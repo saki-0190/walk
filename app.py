@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # =========================
-# デザイン（Figma風）
+# デザイン
 # =========================
 st.markdown("""
 <style>
@@ -24,75 +24,51 @@ html, body, [class*="css"] {
     font-family: 'Nunito', sans-serif;
 }
 
-/* 背景 */
 .stApp {
     background-color: #fffaf4;
 }
 
-/* カード */
 .card {
     background: white;
     padding: 20px;
     border-radius: 18px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     margin-bottom: 20px;
-    transition: 0.2s;
-}
-.card:hover {
-    transform: translateY(-3px);
 }
 
-/* タイトル */
 .title {
     font-size: 30px;
     font-weight: 700;
     color: #ff8fab;
 }
 
-/* サブ */
 .subtitle {
     font-size: 14px;
     color: #888;
 }
 
-/* KPI */
 .kpi {
     font-size: 26px;
     font-weight: bold;
-    color: #333;
 }
 
-/* ボタン */
 .stButton > button {
     background: linear-gradient(135deg, #ff8fab, #ffb3c1);
     color: white;
     border-radius: 12px;
     border: none;
-    padding: 10px 20px;
-    font-weight: bold;
 }
 
-/* プログレス */
-.stProgress > div > div > div {
-    background-color: ##a6cdb6;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-st.markdown("""
-<style>
-/* 進捗バーの進んでいる部分（オレンジ） */
+/* progress色 */
 .stProgress > div > div > div > div {
     background-color: #FFA500 !important;
 }
-
-/* 残り部分（ピンクのところ） */
 .stProgress > div > div > div {
     background-color: #FFE9B2 !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 # =========================
 # データ管理
 # =========================
@@ -100,11 +76,10 @@ FILE_NAME = "steps.csv"
 
 def init_data():
     dates = pd.date_range("2026-05-01", "2026-05-31")
-    df = pd.DataFrame({
+    return pd.DataFrame({
         "date": dates.date,
         "steps": [0]*len(dates)
     })
-    return df
 
 def load_data():
     if os.path.exists(FILE_NAME):
@@ -126,22 +101,37 @@ df = load_data()
 # =========================
 st.markdown('<div class="title">🐾 歩数トラッカー（5月）</div>', unsafe_allow_html=True)
 
-
 # =========================
 # 入力エリア
 # =========================
-col1, col2 = st.columns([1,1])
+col1, col2 = st.columns(2)
 
 with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📅 今日の記録")
 
-    selected_date = st.date_input("日付", date(2026,5,1))
+    selected_date = st.date_input("日付", date.today())
 
     today_steps = df.loc[df["date"] == selected_date, "steps"]
     default_steps = int(today_steps.values[0]) if len(today_steps)>0 else 0
 
-    steps = st.number_input("歩数", min_value=0, value=default_steps)
+    if "steps_input" not in st.session_state:
+        st.session_state.steps_input = default_steps
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("+100"):
+            st.session_state.steps_input += 100
+    with c2:
+        if st.button("+1000"):
+            st.session_state.steps_input += 1000
+
+    steps = st.number_input(
+        "歩数",
+        min_value=0,
+        value=st.session_state.steps_input,
+        key="steps_input"
+    )
 
     if st.button("保存"):
         df.loc[df["date"] == selected_date, "steps"] = steps
@@ -154,8 +144,8 @@ with col2:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("🎯 目標設定")
 
-    target1 = st.number_input("目標①（ゆるめ）", value=8000)
-    target2 = st.number_input("目標②（チャレンジ）", value=10000)
+    target1 = st.number_input("目標①", value=15000)
+    target_past_avg = st.number_input("今日までの目標平均", value=15000)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -165,29 +155,34 @@ with col2:
 total_steps = df["steps"].sum()
 days = len(df)
 
-goal1_total = target1 * days
-goal2_total = target2 * days
-
-progress1 = min(total_steps / goal1_total * 100, 100)
-progress2 = min(total_steps / goal2_total * 100, 100)
-
 today = date.today()
+
+# 月全体
+goal1_total = target1 * days
+progress1 = min(total_steps / goal1_total * 100, 100)
+
 remaining_days = (df["date"] >= today).sum()
-
 remain1 = max(goal1_total - total_steps, 0)
-remain2 = max(goal2_total - total_steps, 0)
+avg_needed1 = remain1 / (remaining_days-1) if remaining_days > 0 else 0
 
-avg_needed1 = remain1 / remaining_days if remaining_days > 0 else 0
-avg_needed2 = remain2 / remaining_days if remaining_days > 0 else 0
+# 今日まで
+df_past = df[df["date"] <= today]
+past_days = len(df_past)
+
+past_total = df_past["steps"].sum()
+avg_steps_so_far = past_total / past_days if past_days > 0 else 0
+
+target_past_total = target_past_avg * past_days
+needed_past = max(target_past_total - past_total, 0)
 
 # =========================
-# KPI表示
+# KPI
 # =========================
-st.markdown("### 📊 進捗")
+st.markdown("### 📊 月全体")
 
-k1, k2, k3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with k1:
+with c1:
     st.markdown(f"""
     <div class="card">
         <div class="subtitle">合計歩数</div>
@@ -195,85 +190,74 @@ with k1:
     </div>
     """, unsafe_allow_html=True)
 
-with k2:
+with c2:
     st.markdown(f"""
     <div class="card">
-        <div class="subtitle">達成率（目標①）</div>
+        <div class="subtitle">達成率</div>
         <div class="kpi">{progress1:.1f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
-with k3:
+with c3:
     st.markdown(f"""
     <div class="card">
-        <div class="subtitle">必要平均</div>
-        <div class="kpi">{avg_needed1:.0f} 歩/日</div>
+        <div class="subtitle">必要平均歩数</div>
+        <div class="kpi">{avg_needed1:.0f}</div>
     </div>
     """, unsafe_allow_html=True)
 
-k1, k2, k3 = st.columns(3)
+# 今日まで
+st.markdown("### 📅 今日まで")
 
-with k1:
+c1, c2, c3 = st.columns(3)
+
+with c1:
     st.markdown(f"""
     <div class="card">
-        <div class="subtitle">合計歩数</div>
-        <div class="kpi">{total_steps:,}</div>
+        <div class="subtitle">平均歩数</div>
+        <div class="kpi">{avg_steps_so_far:.0f}</div>
     </div>
     """, unsafe_allow_html=True)
 
-with k2:
+with c2:
     st.markdown(f"""
     <div class="card">
-        <div class="subtitle">達成率（目標②）</div>
-        <div class="kpi">{progress2:.1f}%</div>
+        <div class="subtitle">目標平均</div>
+        <div class="kpi">{target_past_avg}</div>
     </div>
     """, unsafe_allow_html=True)
 
-with k3:
+with c3:
     st.markdown(f"""
     <div class="card">
-        <div class="subtitle">必要平均</div>
-        <div class="kpi">{avg_needed2:.0f} 歩/日</div>
+        <div class="subtitle">不足歩数</div>
+        <div class="kpi">{needed_past:,.0f}</div>
     </div>
     """, unsafe_allow_html=True)
 
 # =========================
-# 詳細進捗
+# 進捗バー
 # =========================
-
-
 st.write("### 🎯 目標①")
 st.progress(int(progress1))
 st.write(f"残り：{remain1:,.0f}歩 / 必要平均：{avg_needed1:.0f}歩/日")
 
-st.write("### 🚀 目標②")
-st.progress(int(progress2))
-st.write(f"残り：{remain2:,.0f}歩 / 必要平均：{avg_needed2:.0f}歩/日")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
 # =========================
 # グラフ
 # =========================
-
-
 chart_df = df.copy()
 chart_df["date"] = pd.to_datetime(chart_df["date"])
-
-# 目標ライン用データ
 chart_df["target"] = target1
 
-# 実績（棒）
 bars = alt.Chart(chart_df).mark_bar(
     cornerRadiusTopLeft=6,
     cornerRadiusTopRight=6
 ).encode(
-    x=alt.X('date:T', title='日付'),
-    y=alt.Y('steps:Q', title='歩数'),
-    color=alt.value("#FFA500")  # ← 実績だけオレンジ
+    x='date:T',
+    y='steps:Q',
+    color=alt.value("#FFA500")
 )
 
-# 目標（線）
 line = alt.Chart(chart_df).mark_line(
     strokeDash=[5,5],
     color="#ff8fab"
@@ -282,7 +266,39 @@ line = alt.Chart(chart_df).mark_line(
     y='target:Q'
 )
 
-# 合成
-chart = bars + line
+st.altair_chart(bars + line, use_container_width=True)
 
-st.altair_chart(chart, use_container_width=True)
+# =========================
+# 累計グラフ用データ作成
+# =========================
+chart_df = df.copy()
+chart_df["date"] = pd.to_datetime(chart_df["date"])
+
+# 実績累計
+chart_df["actual_cum"] = chart_df["steps"].cumsum()
+
+# 目標累計（例：target1）
+chart_df["target_cum"] = target1 * (chart_df.index + 1)
+
+# =========================
+# グラフ
+# =========================
+actual_line = alt.Chart(chart_df).mark_line(
+    color="#FFA500",
+    strokeWidth=3
+).encode(
+    x=alt.X("date:T", title="日付"),
+    y=alt.Y("actual_cum:Q", title="累計歩数")
+)
+
+target_line = alt.Chart(chart_df).mark_line(
+    color="#ff8fab",
+    strokeDash=[5,5],
+    strokeWidth=2
+).encode(
+    x="date:T",
+    y="target_cum:Q"
+)
+
+# 合成
+st.altair_chart(actual_line + target_line, use_container_width=True)
