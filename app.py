@@ -1,10 +1,14 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import date
 import altair as alt
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+# =========================
+# 日本時間（最重要）
+# =========================
+today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
 
 # =========================
 # ページ設定
@@ -112,7 +116,8 @@ with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📅 今日の記録")
 
-    selected_date = st.date_input("日付", date.today())
+    # ← 修正ポイント
+    selected_date = st.date_input("日付", today)
 
     today_steps = df.loc[df["date"] == selected_date, "steps"]
     default_steps = int(today_steps.values[0]) if len(today_steps)>0 else 0
@@ -131,7 +136,6 @@ with col1:
     steps = st.number_input(
         "歩数",
         min_value=0,
-        value=st.session_state.steps_input,
         key="steps_input"
     )
 
@@ -157,14 +161,16 @@ with col2:
 total_steps = df["steps"].sum()
 days = len(df)
 
-today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+# ← ここも日本時間を使う
+# todayは上で定義済み
 
-# 月全体
 goal1_total = target1 * days
 progress1 = min(total_steps / goal1_total * 100, 100)
 
 remaining_days = (df["date"] >= today).sum()
 remain1 = max(goal1_total - total_steps, 0)
+
+# ★ここはあなたの希望通りそのまま
 avg_needed1 = remain1 / (remaining_days-1) if remaining_days > 0 else 0
 
 # 今日まで
@@ -269,38 +275,3 @@ line = alt.Chart(chart_df).mark_line(
 )
 
 st.altair_chart(bars + line, use_container_width=True)
-
-# =========================
-# 累計グラフ用データ作成
-# =========================
-chart_df = df.copy()
-chart_df["date"] = pd.to_datetime(chart_df["date"])
-
-# 実績累計
-chart_df["actual_cum"] = chart_df["steps"].cumsum()
-
-# 目標累計（例：target1）
-chart_df["target_cum"] = target1 * (chart_df.index + 1)
-
-# =========================
-# グラフ
-# =========================
-actual_line = alt.Chart(chart_df).mark_line(
-    color="#FFA500",
-    strokeWidth=3
-).encode(
-    x=alt.X("date:T", title="日付"),
-    y=alt.Y("actual_cum:Q", title="累計歩数")
-)
-
-target_line = alt.Chart(chart_df).mark_line(
-    color="#ff8fab",
-    strokeDash=[5,5],
-    strokeWidth=2
-).encode(
-    x="date:T",
-    y="target_cum:Q"
-)
-
-# 合成
-st.altair_chart(actual_line + target_line, use_container_width=True)
