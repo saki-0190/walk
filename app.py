@@ -4,7 +4,7 @@ import os
 from datetime import date
 import altair as alt
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 
 # =========================
 # ページ設定
@@ -157,7 +157,7 @@ with col2:
 total_steps = df["steps"].sum()
 days = len(df)
 
-today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
+today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
 
 # 月全体
 goal1_total = target1 * days
