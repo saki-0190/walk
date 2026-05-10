@@ -112,7 +112,7 @@ st.markdown('<div class="title">🐾 歩数トラッカー（5月）</div>', uns
 # =========================
 col1, col2 = st.columns(2)
 
-with col1:
+with col2:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📅 今日の記録")
 
@@ -146,7 +146,7 @@ with col1:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-with col2:
+with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("🎯 目標設定")
 
@@ -186,33 +186,6 @@ needed_past = max(target_past_total - past_total, 0)
 # =========================
 # KPI
 # =========================
-st.markdown("### 📊 月全体")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.markdown(f"""
-    <div class="card">
-        <div class="subtitle">合計歩数</div>
-        <div class="kpi">{total_steps:,}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c2:
-    st.markdown(f"""
-    <div class="card">
-        <div class="subtitle">達成率</div>
-        <div class="kpi">{progress1:.1f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c3:
-    st.markdown(f"""
-    <div class="card">
-        <div class="subtitle">必要平均歩数</div>
-        <div class="kpi">{avg_needed1:.0f}</div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # 今日まで
 st.markdown("### 📅 今日まで")
@@ -240,6 +213,35 @@ with c3:
     <div class="card">
         <div class="subtitle">不足歩数</div>
         <div class="kpi">{needed_past:,.0f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+st.markdown("### 📊 月全体")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtitle">合計歩数</div>
+        <div class="kpi">{total_steps:,}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtitle">達成率</div>
+        <div class="kpi">{progress1:.1f}%</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtitle">必要平均歩数</div>
+        <div class="kpi">{avg_needed1:.0f}</div>
     </div>
     """, unsafe_allow_html=True)
 
