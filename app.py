@@ -112,8 +112,14 @@ st.markdown('<div class="title">🐾 歩数トラッカー（5月）</div>', uns
 # =========================
 col1, col2 = st.columns(2)
 
+with col1:
+   
+    st.subheader("🎯 目標設定")
+
+    target1 = st.number_input("目標①", value=15000)
+    target_past_avg = st.number_input("今日までの目標平均", value=15000)
+
 with col2:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📅 今日の記録")
 
     # ← 修正ポイント
@@ -143,17 +149,6 @@ with col2:
         df.loc[df["date"] == selected_date, "steps"] = steps
         save_data(df)
         st.success("保存しました！")
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col1:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("🎯 目標設定")
-
-    target1 = st.number_input("目標①", value=15000)
-    target_past_avg = st.number_input("今日までの目標平均", value=15000)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================
 # 計算
